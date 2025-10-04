@@ -55,24 +55,50 @@ except ValueError:
     print("Error: Required fields ('des' or 'cd') not found in API response.")
     exit()
 
-def get_asteroid_r_phi_theta():
+
+def get_density_radius(asteroid_name):
+   api_url2 = f"https://ssd-api.jpl.nasa.gov/sbdb.api?sstr={asteroid_name}&phys-par=1"
+   try:
+      response = requests.get(api_url2)
+      response.raise_for_status()
+      data = response.json()
+      phys_params = data.get("phys_par", {})
+
+      radius_km = None
+      if "diameter" in phys_params:
+        radius_km = float(phys_params["diameter"]) / 2
+      
+      density = None
+      if "density" in phys_params:
+        density = float(phys_params["density"])
+
+        return {"radius_km": radius_km, "density": density}
+   except requests.exceptions.RequestException as e:
+        print(f"  -> Could not fetch SBDB data for {asteroid_name}: {e}")
+        return {"radius_km": None, "density": None}
+
+def get_asteroid_data():
   final_results = []
   for i, record in enumerate(approaches):
-      object_name = record[name_index]
+      asteroid_name = record[name_index]
       close_approach_date = record[date_index]
     
-      vector_coords = get_position_vector(object_name, close_approach_date)
+      vector_coords = get_position_vector(asteroid_name, close_approach_date)
       
+      density_radius = get_density_radius(asteroid_name)
+
       if vector_coords:
           x, y, z = vector_coords['X'], vector_coords['Y'], vector_coords['Z']
           
           r_au, theta_rad, phi_rad = spherical(x, y, z)
           
           final_results.append({
-              "name": object_name,
+              "name": asteroid_name,
               "date": close_approach_date,
               "r_au": r_au,
               "phi_deg": np.degrees(phi_rad),      
-              "theta_deg": np.degrees(theta_rad)   
+              "theta_deg": np.degrees(theta_rad),
+              "radius_km": density_radius["radius_km"],
+              "density": density_radius["density"]
           })
   return final_results
