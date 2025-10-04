@@ -1,24 +1,12 @@
 // Constants
-const EARTH_RADIUS = 20;
-const REAL_EARTH_RADIUS_KM = 6371; // km
+const EARTH_RADIUS = 100;
+const REAL_EARTH_RADIUS_KM = 6371;
 const SCALE = REAL_EARTH_RADIUS_KM / EARTH_RADIUS;
 function toThreeJSScale(realKm) {
   return realKm / SCALE;
 }
 const EARTH_SPEED = 0.001;
 const CLOUD_SPEED = 0.0012;
-const ZOOM_SPEED = 2;
-const MIN_DISTANCE = EARTH_RADIUS + 2;
-
-// Asteroid / Launch Parameters (for future use)
-// distance   // initial distance from Earth's center (km or scaled units)
-// angleTheta // horizontal position angle around Earth (longitude, radians)
-// anglePhi   // vertical position angle from North pole (latitude, radians)
-// speed      // initial speed magnitude (km/s or scaled units)
-// launchX    // horizontal launch angle relative to local tangent (radians)
-// launchY    // vertical launch angle relative to local tangent (radians)
-// radius     // asteroid radius (meters or scaled units)
-// density    // asteroid density (kg/m^3 or g/cm^3)
 
 // Scene Setup
 const scene = new THREE.Scene();
@@ -39,12 +27,10 @@ const earthTexture = loader.load("../images/earth.jpg");
 const bumpTexture = loader.load("../images/earthbump.jpg");
 const cloudTexture = loader.load("../images/earthclouds.png");
 
-// Helper Functions
 function createSphere(radius, segments, material){
   return new THREE.Mesh(new THREE.SphereGeometry(radius, segments, segments), material);
 }
 
-// setup
 const earth = createSphere(EARTH_RADIUS, 512, new THREE.MeshPhongMaterial({
   map: earthTexture,
   bumpMap: bumpTexture,
@@ -63,6 +49,7 @@ const clouds = createSphere(EARTH_RADIUS * 1.0125, 512, new THREE.MeshPhongMater
 }));
 scene.add(clouds);
 
+// Starfield
 function addStarfield() {
   const starCount = 10000;
   const positions = new Float32Array(starCount * 3);
@@ -75,7 +62,6 @@ function addStarfield() {
     positions[i*3]     = r * Math.sin(phi) * Math.cos(theta);
     positions[i*3 + 1] = r * Math.sin(phi) * Math.sin(theta);
     positions[i*3 + 2] = r * Math.cos(phi);
-
     const brightness = Math.random() * 0.8 + 0.2;
     colors[i*3] = colors[i*3+1] = colors[i*3+2] = brightness;
   }
@@ -95,36 +81,64 @@ function addStarfield() {
 }
 addStarfield();
 
-// Controls
-function handleKey(e) {
-  switch(e.code) {
-    case 'KeyQ': camera.position.z -= ZOOM_SPEED; break;
-    case 'KeyE': camera.position.z += ZOOM_SPEED; break;
-    case 'ArrowUp': earth.rotation.x += 0.01; break;
-    case 'ArrowDown': earth.rotation.x -= 0.01; break;
-    case 'ArrowLeft': earth.rotation.y -= 0.01; break;
-    case 'ArrowRight': earth.rotation.y += 0.01; break;
-  }
-}
-window.addEventListener('keydown', handleKey);
+// Asteroid
+let asteroid = null;
 
-// Act
-function act(){
-  earth.rotation.y += EARTH_SPEED;
-  clouds.rotation.y += CLOUD_SPEED;
-  // Future logic: asteroids, collisions, etc.
+function spawnAsteroid(distance, angleTheta, anglePhi, speed, launchX, launchY, radius, density) {
+  const distScaled = toThreeJSScale(distance + REAL_EARTH_RADIUS_KM);
+  const speedScaled = toThreeJSScale(speed);
+  const radiusScaled = Math.max(toThreeJSScale(radius), 0.005);
+
+  const newAsteroid = new THREE.Mesh(
+    new THREE.SphereGeometry(radiusScaled, 24, 24),
+    new THREE.MeshPhongMaterial({ color: 0xff5533 })
+  );
+
+  newAsteroid.position.set(
+    distScaled * Math.sin(anglePhi) * Math.cos(angleTheta),
+    distScaled * Math.cos(anglePhi),
+    distScaled * Math.sin(anglePhi) * Math.sin(angleTheta)
+  );
+
+  const vx = -Math.sin(anglePhi + launchY) * Math.cos(angleTheta + launchX);
+  const vy = -Math.cos(anglePhi + launchY);
+  const vz = -Math.sin(anglePhi + launchY) * Math.sin(angleTheta + launchX);
+
+  newAsteroid.userData = {
+    velocity: new THREE.Vector3(vx, vy, vz).normalize().multiplyScalar(speedScaled),
+    radius: radiusScaled,
+    density,
+    launchParams: { distance, angleTheta, anglePhi, speed, launchX, launchY, radius, density }
+  };
+
+  scene.add(newAsteroid);
+  asteroid = newAsteroid;
 }
+
+// Camera updater
+function updateCameraToFit(asteroid, camera, padding = 2) {
+  if (!asteroid) return;
+  const midpoint = asteroid.position.clone().multiplyScalar(0.5);
+  const distance = asteroid.position.length();
+  const direction = new THREE.Vector3(1, 1, 1).normalize();
+  camera.position.copy(midpoint).add(direction.multiplyScalar(distance * padding));
+  camera.lookAt(midpoint);
+}
+
+// Initialize asteroid once
+spawnAsteroid(10000, 2, 2, 0, 0, 0, 2000, 0);
 
 // Animation
-function animate(){
+function animate() {
   requestAnimationFrame(animate);
-  act();
-  camera.lookAt(earth.position);
+  earth.rotation.y += EARTH_SPEED;
+  clouds.rotation.y += CLOUD_SPEED;
+  updateCameraToFit(asteroid, camera);
   renderer.render(scene, camera);
 }
 animate();
 
-// Make Window
+// Resize
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
