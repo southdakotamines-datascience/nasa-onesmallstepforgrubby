@@ -25,9 +25,9 @@ scene.add(new THREE.AmbientLight(0xffffff, 0.3));
 
 // Textures
 const loader = new THREE.TextureLoader();
-const earthTexture = loader.load("textures/earth.jpg");
-const bumpTexture = loader.load("textures/earthbump.jpg");
-const cloudTexture = loader.load("textures/earthclouds.png");
+const earthTexture = loader.load("images/earth.jpg");
+const bumpTexture = loader.load("images/earthbump.jpg");
+const cloudTexture = loader.load("images/earthclouds.png");
 
 // Helper Function
 function createSphere(radius, segments, material){
@@ -102,7 +102,7 @@ function animate(){
 }
 animate();
 
-// Resize 
+// Resize
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
