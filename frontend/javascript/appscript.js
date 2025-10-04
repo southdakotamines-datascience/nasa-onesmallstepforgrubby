@@ -7,6 +7,18 @@ function toThreeJSScale(realKm) {
 }
 const EARTH_SPEED = 0.001;
 const CLOUD_SPEED = 0.0012;
+const ZOOM_SPEED = 2;
+const MIN_DISTANCE = EARTH_RADIUS + 2;
+
+// Asteroid / Launch Parameters (for future use)
+// distance   // initial distance from Earth's center (km or scaled units)
+// angleTheta // horizontal position angle around Earth (longitude, radians)
+// anglePhi   // vertical position angle from North pole (latitude, radians)
+// speed      // initial speed magnitude (km/s or scaled units)
+// launchX    // horizontal launch angle relative to local tangent (radians)
+// launchY    // vertical launch angle relative to local tangent (radians)
+// radius     // asteroid radius (meters or scaled units)
+// density    // asteroid density (kg/m^3 or g/cm^3)
 
 // Scene Setup
 const scene = new THREE.Scene();
@@ -17,24 +29,22 @@ const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Lighting
 const sun = new THREE.DirectionalLight(0xffffff, 1);
 sun.position.set(100, 50, 100);
 scene.add(sun);
 scene.add(new THREE.AmbientLight(0xffffff, 0.3));
 
-// Textures
 const loader = new THREE.TextureLoader();
 const earthTexture = loader.load("../images/earth.jpg");
 const bumpTexture = loader.load("../images/earthbump.jpg");
 const cloudTexture = loader.load("../images/earthclouds.png");
 
-// Helper Function
+// Helper Functions
 function createSphere(radius, segments, material){
   return new THREE.Mesh(new THREE.SphereGeometry(radius, segments, segments), material);
 }
 
-// Earth
+// setup
 const earth = createSphere(EARTH_RADIUS, 512, new THREE.MeshPhongMaterial({
   map: earthTexture,
   bumpMap: bumpTexture,
@@ -44,7 +54,6 @@ const earth = createSphere(EARTH_RADIUS, 512, new THREE.MeshPhongMaterial({
 }));
 scene.add(earth);
 
-// Clouds
 const clouds = createSphere(EARTH_RADIUS * 1.0125, 512, new THREE.MeshPhongMaterial({
   map: cloudTexture,
   transparent: true,
@@ -54,9 +63,8 @@ const clouds = createSphere(EARTH_RADIUS * 1.0125, 512, new THREE.MeshPhongMater
 }));
 scene.add(clouds);
 
-// Stars
 function addStarfield() {
-  const starCount = 20000;
+  const starCount = 10000;
   const positions = new Float32Array(starCount * 3);
   const colors = new Float32Array(starCount * 3);
 
@@ -87,10 +95,24 @@ function addStarfield() {
 }
 addStarfield();
 
+// Controls
+function handleKey(e) {
+  switch(e.code) {
+    case 'KeyQ': camera.position.z -= ZOOM_SPEED; break;
+    case 'KeyE': camera.position.z += ZOOM_SPEED; break;
+    case 'ArrowUp': earth.rotation.x += 0.01; break;
+    case 'ArrowDown': earth.rotation.x -= 0.01; break;
+    case 'ArrowLeft': earth.rotation.y -= 0.01; break;
+    case 'ArrowRight': earth.rotation.y += 0.01; break;
+  }
+}
+window.addEventListener('keydown', handleKey);
+
 // Act
 function act(){
   earth.rotation.y += EARTH_SPEED;
   clouds.rotation.y += CLOUD_SPEED;
+  // Future logic: asteroids, collisions, etc.
 }
 
 // Animation
@@ -102,7 +124,7 @@ function animate(){
 }
 animate();
 
-// Resize
+// Make Window
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
