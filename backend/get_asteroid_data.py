@@ -3,7 +3,7 @@ from astroquery.jplhorizons import Horizons
 from astropy.time import Time
 from datetime import datetime
 import requests
-api_url = "https://ssd-api.jpl.nasa.gov/cad.api?pha=true&date-min=now&date-max=2060-10-05&body=Earth"
+api_url = "https://ssd-api.jpl.nasa.gov/cad.api?pha=true&date-min=now&date-max=2026-10-05&body=Earth"
 
 listOfAU = []
 closeApproachNum = 0
@@ -147,5 +147,5 @@ def get_asteroid_names():
 def get_asteroid_data(name_of_object):
     for temp in final_results:
        if temp["name"] == name_of_object:
+          print(temp["name"])
           return temp
-    return
