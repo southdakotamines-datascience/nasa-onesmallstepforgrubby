@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+
 // some constants for the scene
 const EARTH_RADIUS = 100;
 const REAL_EARTH_RADIUS_KM = 6371;
