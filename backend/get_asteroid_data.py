@@ -3,7 +3,7 @@ from astroquery.jplhorizons import Horizons
 from astropy.time import Time
 from datetime import datetime
 import requests
-api_url = "https://ssd-api.jpl.nasa.gov/cad.api?neo=true&pha=true&body=Earth"
+api_url = "https://ssd-api.jpl.nasa.gov/cad.api?pha=true&date-min=now&date-max=2060-10-05&body=Earth"
 
 listOfAU = []
 closeApproachNum = 0
