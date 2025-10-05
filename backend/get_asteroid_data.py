@@ -110,34 +110,47 @@ def launch_angle(position, velocity, theta, phi):
    return {"km/s": km_per_s, "launchX": launchX, "launchY": launchY}
 
 # Final function that is called by the frontend to fetch the asteroid data in a list of dictionaries
-def get_asteroid_data():
-  final_results = []
-  for record in approaches:
-      asteroid_name = record[name_index]
-      close_approach_date = record[date_index]
+
+final_results = []
+for record in approaches:
+    asteroid_name = record[name_index]
+    close_approach_date = record[date_index]
     
-      vector_coords = get_position_vector(asteroid_name, close_approach_date)
+    vector_coords = get_position_vector(asteroid_name, close_approach_date)
       
-      density_radius = get_density_radius(asteroid_name)
+    density_radius = get_density_radius(asteroid_name)
 
-      if vector_coords:
-          x, y, z = vector_coords['X'], vector_coords['Y'], vector_coords['Z']
-          positions = np.array([x, y, z])
-          velocities = np.array([vector_coords['VX'], vector_coords['VY'], vector_coords['VZ']])
+    if vector_coords:
+        x, y, z = vector_coords['X'], vector_coords['Y'], vector_coords['Z']
+        positions = np.array([x, y, z])
+        velocities = np.array([vector_coords['VX'], vector_coords['VY'], vector_coords['VZ']])
           
-          r_au, theta, phi = spherical(x, y, z)
+        r_au, theta, phi = spherical(x, y, z)
 
-          launch_angles = launch_angle(positions, velocities, theta, phi)
+        launch_angles = launch_angle(positions, velocities, theta, phi)
 
-          final_results.append({
-              "name": asteroid_name,
-              "date": close_approach_date,
-              "distance": r_au,
-              "anglePhi": phi,      
-              "angleTheta": theta,
-              "radius": density_radius["radius_km"],
-              "density": density_radius["density"],
-              "speed": launch_angles["km/s"],
-              "launchX": launch_angles["launchX"],
-              "launchY": launch_angles["launchY"]})
-  return final_results
+        final_results.append({
+            "name": asteroid_name,
+            "date": close_approach_date,
+            "distance": r_au,
+            "anglePhi": phi,      
+            "angleTheta": theta,
+            "radius": density_radius["radius_km"],
+            "density": density_radius["density"],
+            "speed": launch_angles["km/s"],
+            "launchX": launch_angles["launchX"],
+            "launchY": launch_angles["launchY"]})
+
+def get_asteroid_names():
+   listy = []
+   for temp in final_results:
+      listy.append(temp["name"])
+   return listy
+
+
+def get_asteroid_data(name_of_object):
+    for temp in final_results:
+       if temp["name"] == name_of_object:
+          return temp
+       
+    return
