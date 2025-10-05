@@ -1,4 +1,9 @@
 import * as THREE from 'three';
+import { get_asteroid_names, get_asteroid_data } from './data-access.js'
+
+window.onload = () => {
+  get_asteroid_data("2020 FA5")
+}
 
 // some constants for the scene
 const EARTH_RADIUS = 100;

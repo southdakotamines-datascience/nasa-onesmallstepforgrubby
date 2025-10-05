@@ -11,14 +11,11 @@ closeApproachNum = 0
 # Trying to fetch the API
 try:
   response = requests.get(api_url)
-
   response.raise_for_status()
-
   data = response.json()
 
 except requests.exceptions.RequestException as e:
   print(f"Can not fetch data: {e}")
-
 
 
 fields = data.get("fields", [])
@@ -147,10 +144,8 @@ def get_asteroid_names():
       listy.append(temp["name"])
    return listy
 
-
 def get_asteroid_data(name_of_object):
     for temp in final_results:
        if temp["name"] == name_of_object:
           return temp
-       
     return

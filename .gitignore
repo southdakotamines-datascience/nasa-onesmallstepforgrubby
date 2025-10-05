@@ -1,2 +1,5 @@
 # Node modules (installed packages)
 node_modules/
+
+# Python related
+__pycache__/
