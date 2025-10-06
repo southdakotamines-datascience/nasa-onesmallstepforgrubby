@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import loadDropdown from './data-access.js'
+import { get_asteroid_names, get_asteroid_data } from './data-access.js'
 
 // some constants for the scene
 const EARTH_RADIUS = 100;
@@ -314,24 +314,40 @@ function animate(){
 animate();
 
 // control panel
-function updateAsteroidFromSliders(){
-  const distance = parseFloat(document.getElementById("distance").value);
-  const angleTheta = parseFloat(document.getElementById("angleTheta").value);
-  const anglePhi = parseFloat(document.getElementById("anglePhi").value);
-  const speed = parseFloat(document.getElementById("speed").value);
-  const launchX = parseFloat(document.getElementById("launchX").value);
-  const launchY = parseFloat(document.getElementById("launchY").value);
-  const radius = parseFloat(document.getElementById("radius").value);
-  const density = parseFloat(document.getElementById("density").value);
+async function loadDropdown() {
+    const list = await get_asteroid_names();
+    const dropdownElement = document.getElementById('asteroids-select');
+
+    list.forEach(element => {
+        let item = document.createElement('option');
+        item.value = element;
+        item.innerText = element;
+        dropdownElement.appendChild(item);
+    });
+}
+window.onload = function() {
+  loadDropdown();
+}
+
+async function updateAsteroidFromSelect(){
+  const dropDown = document.getElementById('asteroids-select');
+  const selected = await get_asteroid_data(dropDown.value);
+
+  const distance = parseFloat(selected["distance"]);
+  const angleTheta = parseFloat(selected["angleTheta"]);
+  const anglePhi = parseFloat(selected["anglePhi"]);
+  const speed = parseFloat(selected["speed"]);
+  const launchX = parseFloat(selected["launchX"]);
+  const launchY = parseFloat(selected["launchY"]);
+  const radius = parseFloat(selected["radius"]);
+  const density = parseFloat(selected["density"]);
 
   spawnAsteroid(distance,angleTheta,anglePhi,speed,launchX,launchY,radius,density);
 }
 
-["distance","angleTheta","anglePhi","speed","launchX","launchY","radius","density"].forEach(id=>{
-  document.getElementById(id).addEventListener("input", updateAsteroidFromSliders);
-});
+document.getElementById('asteroids-select').addEventListener("change", updateAsteroidFromSelect());
 
-updateAsteroidFromSliders();
+updateAsteroidFromSelect();
 
 window.addEventListener("keydown",(e)=>{
   if(e.code==="ArrowUp") launched=true; // press up to launch
@@ -341,8 +357,4 @@ window.addEventListener("resize",()=>{
   camera.aspect = window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth,window.innerHeight);
-});
-
-window.onload(() => {
-  loadDropdown();
 });
