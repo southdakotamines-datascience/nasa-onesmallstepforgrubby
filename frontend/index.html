@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Asteroid Simulator Menu</title>
+<title>Near-Earth Object Explorer and Asteroid Simulator</title>
 <style>
   body { margin:0; overflow:hidden; font-family: sans-serif; background:#000; }
   canvas { display:block; }
@@ -20,13 +20,19 @@
     pointer-events:none;
   }
 
-  #menu img {
+  /* Gray, non-glowing 3D-ish title */
+  #mainTitle {
     position:absolute;
     top:20px;
     left:50%;
-    transform:translateX(-50%);
-    width:500px;
+    transform:translateX(-50%) rotateX(5deg) rotateY(-2deg);
+    font-size:48px;
+    color:#ccc;
+    text-align:center;
+    line-height:1.2;
     pointer-events:auto;
+    font-family: 'Arial Black', sans-serif;
+    letter-spacing: 1px;
   }
 
   .menu-buttons {
@@ -52,17 +58,73 @@
     background:rgba(0,255,0,1);
     transform:scale(1.05);
   }
+
+  /* Learn More popup */
+  #learnMorePopup {
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    width:600px;
+    max-height:80%;
+    background:rgba(0,0,0,0.9);
+    color:white;
+    padding:20px;
+    border-radius:15px;
+    font-size:16px;
+    overflow-y:auto;
+    display:none;
+    z-index:10;
+  }
+
+  #learnMorePopup h2 {
+    margin-top:0;
+    text-align:center;
+  }
+
+  #learnMorePopup ul {
+    margin-left:20px;
+  }
+
+  #learnMorePopup .back-button {
+    background:rgba(255,255,255,0.1);
+    border:none;
+    color:white;
+    font-size:16px;
+    padding:6px 10px;
+    border-radius:5px;
+    cursor:pointer;
+    margin-bottom:10px;
+  }
+
+  #learnMorePopup .back-button:hover {
+    background:rgba(255,255,255,0.3);
+  }
 </style>
 </head>
 <body>
 
 <div id="menu">
-  <img src="../images/UI_prefabs/earthvsastroidtitle.svg" alt="Asteroid Simulator Title">
+  <h1 id="mainTitle">Near-Earth Object Explorer<br>and Asteroid Simulator</h1>
   <div class="menu-buttons">
-    <button id="realNEO">Use Real Near Earth Objects</button>
-    <button id="sandbox">Sandbox Mode</button>
-    <button id="learnMore">Learn More</button>
+    <button id="realNEO">Explore Near-Earth Objects</button>
+    <button id="sandbox">Asteroid Simulator</button>
+    <button id="learnMore">Learn More About Asteroids & NEOs</button>
   </div>
+</div>
+
+<!-- Learn More Popup -->
+<div id="learnMorePopup">
+  <button class="back-button" id="closeLearnMore">&larr; Back</button>
+  <h2>Asteroids & Near-Earth Objects</h2>
+  <p>Near-Earth Objects, or NEOs, are asteroids and comets that come pretty close to Earth's orbit. Learning about them is important both for protecting our planet and for exploring space.</p>
+  <ul>
+    <li><strong>Asteroids:</strong> Mostly rocky chunks of rock found in the asteroid belt between Mars and Jupiter.</li>
+    <li><strong>Comets:</strong> Icy bodies that sprout bright tails when they get near the Sun.</li>
+    <li><strong>NEOs:</strong> Objects that cross or come near Earth's orbit.</li>
+  </ul>
+  <p>Studying NEOs helps scientists predict possible impacts, plan space missions, and understand how our solar system formed. NASA tracks these objects using telescopes, sky surveys, and space missions that aim to detect, study, and even deflect them if needed.</p>
+  <p>One proposed method for deflecting an asteroid is using a <strong>tugger ship</strong> (also called a gravity tractor). This spacecraft hovers near an asteroid and slowly nudges it with its own gravity. Even though the effect is tiny, over time it can steer a potentially dangerous asteroid away from Earth without breaking it apart, offering a careful and controlled approach to planetary defense.</p>
 </div>
 
 <script type="module">
@@ -85,8 +147,8 @@ scene.add(new THREE.AmbientLight(0xffffff,0.3));
 
 // Earth
 const loader = new THREE.TextureLoader();
-const earthTexture = loader.load("https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg");
-const bumpTexture = loader.load("https://threejs.org/examples/textures/planets/earth_bump_2048.jpg");
+const earthTexture = loader.load("images/earth.jpg");
+const bumpTexture = loader.load("images/earthbump.jpg");
 
 const EARTH_RADIUS = 100;
 const earthMaterial = new THREE.MeshPhongMaterial({ map: earthTexture, bumpMap: bumpTexture, bumpScale: 3 });
@@ -94,7 +156,7 @@ const earth = new THREE.Mesh(new THREE.SphereGeometry(EARTH_RADIUS,128,128), ear
 scene.add(earth);
 
 // Clouds
-const cloudTexture = loader.load("https://threejs.org/examples/textures/planets/earth_clouds_1024.png");
+const cloudTexture = loader.load("images/earthclouds.png");
 const clouds = new THREE.Mesh(
   new THREE.SphereGeometry(EARTH_RADIUS*1.0125,64,64),
   new THREE.MeshPhongMaterial({ map: cloudTexture, transparent:true, opacity:0.6, depthWrite:false, side:THREE.DoubleSide })
@@ -132,15 +194,21 @@ animate();
 
 // --- Buttons ---
 document.getElementById("realNEO").addEventListener("click", ()=>{
-    window.location.href = "neotable.html"; // <-- opens your NEO table
+    window.location.href = "neotable.html";
 });
 
 document.getElementById("sandbox").addEventListener("click", ()=>{
     window.location.href = "sandbox.html";
 });
 
+// Show Learn More popup
 document.getElementById("learnMore").addEventListener("click", ()=>{
-    alert("Learn more about asteroids and near-Earth objects!");
+    document.getElementById("learnMorePopup").style.display = "block";
+});
+
+// Close Learn More popup
+document.getElementById("closeLearnMore").addEventListener("click", ()=>{
+    document.getElementById("learnMorePopup").style.display = "none";
 });
 
 // Resize handler

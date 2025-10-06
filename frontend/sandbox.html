@@ -8,6 +8,7 @@
     <style>
       body { margin: 0; overflow: hidden; font-family: sans-serif; }
 
+      /* Left-side controls */
       #controls {
         position: absolute;
         top: 10px;
@@ -53,10 +54,11 @@
         cursor: pointer;
       }
 
+      /* Back to Main Menu button (left of info panel) */
       #backButton {
         position: absolute;
         top: 10px;
-        right: 10px;
+        right: 310px; /* Left of instructions panel (300px wide + 10px margin) */
         padding: 8px 12px;
         background: rgba(0,0,0,0.6);
         color: white;
@@ -64,19 +66,64 @@
         border: none;
         border-radius: 8px;
         cursor: pointer;
+        z-index: 10;
       }
 
       #backButton:hover { background: rgba(255,255,255,0.2); }
+
+      /* Right-side instructions panel */
+      #instructions {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 300px;
+        height: 100%;
+        background: rgba(0,0,0,0.6);
+        padding: 15px;
+        border-radius: 0 0 0 10px;
+        color: white;
+        font-size: 14px;
+        overflow-y: auto;
+      }
+
+      #instructions h3 {
+        margin-top: 0;
+        font-size: 18px;
+        text-align: center;
+      }
+
+      #instructions ul {
+        padding-left: 16px;
+        margin: 4px 0;
+      }
+
+      #instructions li {
+        margin-bottom: 6px;
+      }
+
+      #instructions ul ul {
+        padding-left: 18px;
+      }
+
+      .zone-color {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        margin-right: 6px;
+        border: 1px solid #fff;
+        vertical-align: middle;
+      }
     </style>
   </head>
   <body>
-    <!-- Back to main menu -->
+    <!-- Back to Main Menu -->
     <button id="backButton">&larr; Main Menu</button>
 
+    <!-- Left-side controls -->
     <div id="controls">
       <label>Distance
         <div class="slider-container">
-          <input type="range" id="distance" min="1000" max="50000" value="10000" step="100">
+          <input type="range" id="distance" min="1000" max="100000" value="10000" step="100">
           <span class="value" id="distanceVal">10000 km</span>
         </div>
       </label>
@@ -97,7 +144,7 @@
 
       <label>Speed
         <div class="slider-container">
-          <input type="range" id="speed" min="0" max="5000" value="0" step="10">
+          <input type="range" id="speed" min="0" max="200" value="0" step="10">
           <span class="value" id="speedVal">0 km/s</span>
         </div>
       </label>
@@ -118,25 +165,59 @@
 
       <label>Radius
         <div class="slider-container">
-          <input type="range" id="radius" min="1" max="1000" value="200" step="1">
+          <input type="range" id="radius" min="1" max="2000" value="200" step="1">
           <span class="value" id="radiusVal">200 m</span>
         </div>
       </label>
 
       <label>Density
         <div class="slider-container">
-          <input type="range" id="density" min="1" max="1000" value="300" step="1">
-          <span class="value" id="densityVal">300 kg/m³</span>
+          <input type="range" id="density" min="1000" max="8000" value="3000" step="100">
+          <span class="value" id="densityVal">3000 kg/m³</span>
+        </div>
+      </label>
+
+      <label>Tug Ship Force
+        <div class="slider-container">
+          <input type="range" id="tugForce" min="0" max="0.001" value="0" step="0.0001">
+          <span class="value" id="tugForceVal">0.0</span>
         </div>
       </label>
 
       <button id="launchAsteroid">Launch Asteroid</button>
-      <button id="spawnTugger" disabled>Spawn Tugger</button>
+      <button id="spawnTugger" disabled>Spawn Tugger Ship</button>
       <button id="reset">Reset</button>
     </div>
 
+    <!-- Right-side instructions -->
+    <div id="instructions">
+      <h3>Asteroid Simulator Instructions</h3>
+      <ul>
+        <li>Use the sliders on the left to set asteroid properties:</li>
+        <ul>
+          <li><strong>Distance:</strong> Starting distance from Earth (km)</li>
+          <li><strong>Angles θ & φ:</strong> Starting position angle in radians</li>
+          <li><strong>Speed:</strong> Initial speed of the asteroid (km/s)</li>
+          <li><strong>Launch X & Y:</strong> Adjust asteroid launch trajectory angle</li>
+          <li><strong>Radius:</strong> Asteroid size (meters)</li>
+          <li><strong>Density:</strong> Asteroid material density (kg/m³)</li>
+          <li><strong>Tug Ship Force:</strong> Strength of the tugger ship to pull asteroid</li>
+        </ul>
+        <li>Click <strong>Launch Asteroid</strong> (or press ↑) to start asteroid motion.</li>
+        <li>Click <strong>Spawn Tugger Ship</strong> (or press M) to add a tugger ship after asteroid launch.
+            The tugger ship applies a small force to nudge the asteroid and alter its trajectory.</li>
+        <li>Impact zones on Earth are shown as colored spheres:</li>
+        <ul>
+          <li><span class="zone-color" style="background:red;"></span> <strong>Red:</strong> Crater center (maximum destruction)</li>
+          <li><span class="zone-color" style="background:orange;"></span> <strong>Orange:</strong> Severe damage surrounding the crater</li>
+          <li><span class="zone-color" style="background:yellow;"></span> <strong>Yellow:</strong> Light damage / debris area around impact</li>
+        </ul>
+        <li>Reset simulation at any time with <strong>Reset</strong>.</li>
+      </ul>
+    </div>
+
     <script type="module">
-      // Back button
+        
       document.getElementById("backButton").addEventListener("click", () => {
         window.location.href = "index.html"; // adjust as needed
       });
@@ -150,13 +231,16 @@
         {id:"launchX", unit:" rad"},
         {id:"launchY", unit:" rad"},
         {id:"radius", unit:" m"},
-        {id:"density", unit:" kg/m³"}
+        {id:"density", unit:" kg/m³"},
+        {id:"tugForce", unit:""} // Tug Force
       ];
 
       sliders.forEach(s => {
         const slider = document.getElementById(s.id);
         const valSpan = document.getElementById(s.id + "Val");
-        slider.addEventListener("input", () => valSpan.textContent = slider.value + s.unit);
+        slider.addEventListener("input", () => {
+          valSpan.textContent = parseFloat(slider.value).toFixed(3) + s.unit;
+        });
       });
 
       // Buttons trigger keyboard events in appscript.js
