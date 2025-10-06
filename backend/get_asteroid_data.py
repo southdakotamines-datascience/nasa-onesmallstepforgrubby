@@ -68,7 +68,7 @@ def get_density_radius(asteroid_name):
       data = response.json()
       phys_params = data.get("phys_par", {})
 
-      # Some of the asteroids don't have data on this so we have to check :/
+      # Some of the asteroids don't have data on this so we have to check
       radius_km = None
       if "diameter" in phys_params:
         radius_km = float(phys_params["diameter"]) / 2
