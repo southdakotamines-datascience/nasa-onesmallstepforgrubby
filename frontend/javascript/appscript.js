@@ -5,17 +5,17 @@ window.onload = () => {
   get_asteroid_data("2020 FA5")
 }
 
-// some constants for the scene
+// --- Constants ---
 const EARTH_RADIUS = 100;
 const REAL_EARTH_RADIUS_KM = 6371;
 const SCALE = REAL_EARTH_RADIUS_KM / EARTH_RADIUS;
 function toThreeJSScale(realKm) { return realKm / SCALE; }
 
-const EARTH_SPEED = 0.001; // how fast the earth spins
-const CLOUD_SPEED = 0.0012; // clouds spin a bit faster
-const G_SIM = 100; // gravity strength
+const EARTH_SPEED = 0.001;
+const CLOUD_SPEED = 0.0012;
+const G_SIM = 100;
 
-// set up the scene
+// --- Scene setup ---
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 50000);
 camera.position.set(0,0,600);
@@ -24,13 +24,13 @@ const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// lights
+// --- Lights ---
 const sun = new THREE.DirectionalLight(0xffffff,1);
 sun.position.set(100,50,100);
 scene.add(sun);
 scene.add(new THREE.AmbientLight(0xffffff,0.3));
 
-// textures
+// --- Textures ---
 const loader = new THREE.TextureLoader();
 const earthTexture = loader.load("https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg");
 const bumpTexture = loader.load("https://threejs.org/examples/textures/planets/earth_bump_2048.jpg");
@@ -40,7 +40,7 @@ function createSphere(radius, segments, material){
   return new THREE.Mesh(new THREE.SphereGeometry(radius,segments,segments), material);
 }
 
-// earth and clouds
+// --- Earth and Clouds ---
 const earth = createSphere(EARTH_RADIUS,128,new THREE.MeshPhongMaterial({
   map:earthTexture, bumpMap:bumpTexture, bumpScale:3
 }));
@@ -51,7 +51,7 @@ const clouds = createSphere(EARTH_RADIUS*1.0125,64,new THREE.MeshPhongMaterial({
 }));
 scene.add(clouds);
 
-// stars in the background
+// --- Starfield ---
 function addStarfield(){
   const starCount = 10000;
   const positions = new Float32Array(starCount*3);
@@ -78,13 +78,13 @@ function addStarfield(){
 }
 addStarfield();
 
-// asteroid stuff
+// --- Asteroid ---
 let asteroid = null;
 let launched = false;
 let trajectoryLine = null;
+let asteroidLaunched = false;
 
 function spawnAsteroid(distance, angleTheta, anglePhi, speed, launchX, launchY, radius, density){
-  // get rid of the old asteroid and trajectory if they exist
   if(asteroid) scene.remove(asteroid);
   if(trajectoryLine){
     scene.remove(trajectoryLine);
@@ -102,7 +102,6 @@ function spawnAsteroid(distance, angleTheta, anglePhi, speed, launchX, launchY, 
     new THREE.MeshPhongMaterial({color:0xff5533})
   );
 
-  // place asteroid in space
   newAsteroid.position.set(
     distScaled * Math.sin(anglePhi)*Math.cos(angleTheta),
     distScaled * Math.cos(anglePhi),
@@ -121,12 +120,11 @@ function spawnAsteroid(distance, angleTheta, anglePhi, speed, launchX, launchY, 
 
   scene.add(newAsteroid);
   asteroid = newAsteroid;
-
-  // draw the path before launch
+  asteroidLaunched = false;
   drawTrajectory(asteroid,2000,0.5);
 }
 
-// gravity and trajectory calculations
+// --- Gravity + Trajectory ---
 function applyGravity(obj, dt){
   if(!obj) return;
   const rVec = new THREE.Vector3().subVectors(new THREE.Vector3(0,0,0), obj.position);
@@ -138,9 +136,8 @@ function applyGravity(obj, dt){
 }
 
 function drawTrajectory(obj, steps=1000, dt=1){
-  if(!obj) return;
+  if(!obj || asteroidLaunched) return;
   if(trajectoryLine){
-    // get rid of old line
     scene.remove(trajectoryLine);
     trajectoryLine.geometry.dispose();
     trajectoryLine.material.dispose();
@@ -169,7 +166,38 @@ function drawTrajectory(obj, steps=1000, dt=1){
   }
 }
 
-// camera stuff
+// --- Tugger Ship ---
+let tugger = null;
+let tugActive = false;
+const tugForce = 0.01;
+
+function spawnTugger(){
+  if(!asteroid || tugActive) return;
+  tugActive = true;
+
+  tugger = new THREE.Mesh(
+    new THREE.BoxGeometry(2,2,4),
+    new THREE.MeshPhongMaterial({color:0x00ff00})
+  );
+  scene.add(tugger);
+
+  const directions = [
+    new THREE.Vector3(1,0,0),
+    new THREE.Vector3(-1,0,0),
+    new THREE.Vector3(0,1,0),
+    new THREE.Vector3(0,-1,0)
+  ];
+  tugger.userData.dir = directions[Math.floor(Math.random() * 4)];
+}
+
+function applyTug(){
+  if(!tugActive || !asteroid) return;
+  const dir = tugger.userData.dir;
+  asteroid.userData.velocity.add(dir.clone().multiplyScalar(tugForce));
+  tugger.position.copy(asteroid.position.clone().add(dir.clone().multiplyScalar(asteroid.userData.radius + 2)));
+}
+
+// --- Camera ---
 let impactCameraOffset = new THREE.Vector3(0, 200, 200);
 let impactCameraLocked = false;
 let impactOrbitAngle = 0;
@@ -204,36 +232,32 @@ function updateChaseCamera(obj, distanceMultiplier = 6, lerpFactor = 0.15) {
   camera.lookAt(obj.position);
 }
 
-// crater calculation
+// --- Crater ---
 function calculateCrater(asteroidRadius, velocity, asteroidDensity, targetDensity=2700){
   const asteroidRadiusM = asteroidRadius * SCALE * 1000;
   const asteroidDiameterM = asteroidRadiusM * 2;
   const velocityM = velocity * SCALE * 1000;
 
   const k = 1.161; const mu = 0.55; const nu = 0.4;
-
   const diameter = k *
     Math.pow(asteroidDensity / targetDensity, 1/3) *
     Math.pow(asteroidDiameterM, nu) *
     Math.pow(velocityM, mu);
 
   const depth = 0.2 * diameter;
-
   return {diameter, depth};
 }
 
-// impact zones on earth
+// --- Impact zones ---
 let redZone=null, orangeZone=null, yellowZone=null;
 let zoneScale=0;
 
 function createImpactZonesOnEarth(craterDiameterM, localImpactPos){
-  // remove old zones
   [redZone, orangeZone, yellowZone].forEach(zone=>{
     if(zone) earth.remove(zone);
   });
 
   const craterRadius = (craterDiameterM / 2) / 1000 / SCALE;
-
   const p = localImpactPos.clone().normalize();
   const lat = Math.asin(p.y);
   const lon = Math.atan2(p.z, p.x);
@@ -260,7 +284,6 @@ function createImpactZonesOnEarth(craterDiameterM, localImpactPos){
 
   zoneScale = 1;
 
-  // get rid of asteroid after impact
   scene.remove(asteroid);
   asteroid = null;
   launched = false;
@@ -268,37 +291,91 @@ function createImpactZonesOnEarth(craterDiameterM, localImpactPos){
   lockCameraOnImpact();
 }
 
-// the main loop
+// --- Detect page ---
+const currentPage = window.location.pathname.split("/").pop();
+let neoRadius = null;
+let neoDensity = null;
+if(currentPage === "neosimulation.html"){
+    const selectedNEO = JSON.parse(localStorage.getItem('selectedNEO')) || {};
+    neoRadius = selectedNEO.radius;
+    neoDensity = selectedNEO.density;
+}
+
+// --- Controls ---
+function updateAsteroidFromSliders(){
+    const distance = parseFloat(document.getElementById("distance").value);
+    const angleTheta = parseFloat(document.getElementById("angleTheta").value);
+    const anglePhi = parseFloat(document.getElementById("anglePhi").value);
+    const speed = parseFloat(document.getElementById("speed").value);
+    const launchX = parseFloat(document.getElementById("launchX").value);
+    const launchY = parseFloat(document.getElementById("launchY").value);
+
+    let radius = neoRadius !== null ? neoRadius : parseFloat(document.getElementById("radius").value);
+    let density = neoDensity !== null ? neoDensity : parseFloat(document.getElementById("density").value);
+
+    spawnAsteroid(distance, angleTheta, anglePhi, speed, launchX, launchY, radius, density);
+}
+
+["distance","angleTheta","anglePhi","speed","launchX","launchY"].forEach(id=>{
+  const el = document.getElementById(id);
+  if(el) el.addEventListener("input", updateAsteroidFromSliders);
+});
+
+if(neoRadius === null){
+    ["radius","density"].forEach(id=>{
+        const el = document.getElementById(id);
+        if(el) el.addEventListener("input", updateAsteroidFromSliders);
+    });
+}
+
+updateAsteroidFromSliders();
+
+window.addEventListener("keydown",(e)=>{
+  if(e.code==="ArrowUp") launched=true;
+  if(e.code==="KeyM") spawnTugger();
+});
+
+window.addEventListener("resize",()=>{
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+});
+
+// --- Main Loop ---
 function act(){
   earth.rotation.y += EARTH_SPEED;
   clouds.rotation.y += CLOUD_SPEED;
 
   if(launched && asteroid){
-    // remove trajectory line once we launch
-    if (trajectoryLine) {
+    applyGravity(asteroid,1);
+
+    if(!asteroidLaunched){
+      asteroidLaunched = true;
+      if(trajectoryLine){
         scene.remove(trajectoryLine);
         trajectoryLine.geometry.dispose();
         trajectoryLine.material.dispose();
-        trajectoryLine = null;
+        trajectoryLine=null;
+      }
     }
 
-    applyGravity(asteroid,1);
+    if(tugActive) applyTug();
 
-    if(asteroid.position.length() <= EARTH_RADIUS){
+    if (asteroid.position.length() <= EARTH_RADIUS){
       const localImpactPos = earth.worldToLocal(asteroid.position.clone());
       const impactVelocity = asteroid.userData.velocity.length();
       const crater = calculateCrater(asteroid.userData.radius, impactVelocity, asteroid.userData.density);
-      console.log(`Asteroid hit! Estimated crater diameter: ${crater.diameter.toFixed(1)} m, depth: ${crater.depth.toFixed(1)} m`);
+      console.log(`Asteroid hit! Crater diameter: ${crater.diameter.toFixed(1)} m, depth: ${crater.depth.toFixed(1)} m`);
       createImpactZonesOnEarth(crater.diameter, localImpactPos);
     }
 
     updateChaseCamera(asteroid,6,0.15);
   } else {
-    // show trajectory while asteroid is sitting there
-    drawTrajectory(asteroid,2000,0.5);
+    if(!asteroidLaunched){
+      drawTrajectory(asteroid,2000,0.5);
+    }
   }
 
-  // scale the impact zones gradually
   if(redZone && zoneScale<2){
     const scaleSpeed = 0.01;
     [redZone, orangeZone, yellowZone].forEach(zone=>{
@@ -306,8 +383,6 @@ function act(){
     });
     zoneScale += scaleSpeed;
   }
-
-  updateImpactCamera();
 }
 
 function animate(){
@@ -316,33 +391,3 @@ function animate(){
   renderer.render(scene,camera);
 }
 animate();
-
-// control panel
-function updateAsteroidFromSliders(){
-  const distance = parseFloat(document.getElementById("distance").value);
-  const angleTheta = parseFloat(document.getElementById("angleTheta").value);
-  const anglePhi = parseFloat(document.getElementById("anglePhi").value);
-  const speed = parseFloat(document.getElementById("speed").value);
-  const launchX = parseFloat(document.getElementById("launchX").value);
-  const launchY = parseFloat(document.getElementById("launchY").value);
-  const radius = parseFloat(document.getElementById("radius").value);
-  const density = parseFloat(document.getElementById("density").value);
-
-  spawnAsteroid(distance,angleTheta,anglePhi,speed,launchX,launchY,radius,density);
-}
-
-["distance","angleTheta","anglePhi","speed","launchX","launchY","radius","density"].forEach(id=>{
-  document.getElementById(id).addEventListener("input", updateAsteroidFromSliders);
-});
-
-updateAsteroidFromSliders();
-
-window.addEventListener("keydown",(e)=>{
-  if(e.code==="ArrowUp") launched=true; // press up to launch
-});
-
-window.addEventListener("resize",()=>{
-  camera.aspect = window.innerWidth/window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth,window.innerHeight);
-});

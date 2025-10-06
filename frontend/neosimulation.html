@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Asteroid Simulator</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script type="module" src="javascript/appscript.js"></script>
+    <style>
+      body { margin: 0; overflow: hidden; font-family: sans-serif; }
+
+      #controls {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(0,0,0,0.6);
+        padding: 15px;
+        border-radius: 10px;
+        color: white;
+        max-width: 340px;
+      }
+
+      #controls label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      #controls .slider-container {
+        display: flex;
+        align-items: center;
+        width: 100%;
+      }
+
+      #controls input[type=range] {
+        flex: 1;
+      }
+
+      #controls span.value {
+        margin-left: 8px;
+        width: 70px;
+        text-align: right;
+        font-family: monospace;
+      }
+
+      #controls button {
+        margin-top: 5px;
+        width: 100%;
+        padding: 6px;
+        font-size: 14px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      #backButton {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 8px 12px;
+        background: rgba(0,0,0,0.6);
+        color: white;
+        font-size: 18px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+
+      #backButton:hover { background: rgba(255,255,255,0.2); }
+    </style>
+  </head>
+  <body>
+    <button id="backButton">&larr; Main Menu</button>
+
+    <div id="controls">
+      <label>Distance
+        <div class="slider-container">
+          <input type="range" id="distance" min="1000" max="50000" value="10000" step="100">
+          <span class="value" id="distanceVal">10000 km</span>
+        </div>
+      </label>
+
+      <label>Angle θ
+        <div class="slider-container">
+          <input type="range" id="angleTheta" min="0" max="6.28" step="0.01" value="2">
+          <span class="value" id="angleThetaVal">2 rad</span>
+        </div>
+      </label>
+
+      <label>Angle φ
+        <div class="slider-container">
+          <input type="range" id="anglePhi" min="0" max="3.14" step="0.01" value="2">
+          <span class="value" id="anglePhiVal">2 rad</span>
+        </div>
+      </label>
+
+      <label>Speed
+        <div class="slider-container">
+          <input type="range" id="speed" min="0" max="5000" value="0" step="10">
+          <span class="value" id="speedVal">0 km/s</span>
+        </div>
+      </label>
+
+      <label>Launch X
+        <div class="slider-container">
+          <input type="range" id="launchX" min="-3.14" max="3.14" step="0.01" value="0">
+          <span class="value" id="launchXVal">0 rad</span>
+        </div>
+      </label>
+
+      <label>Launch Y
+        <div class="slider-container">
+          <input type="range" id="launchY" min="-3.14" max="3.14" step="0.01" value="0">
+          <span class="value" id="launchYVal">0 rad</span>
+        </div>
+      </label>
+
+      <label>Radius
+        <div class="slider-container">
+          <span class="value" id="radiusVal">— m</span>
+        </div>
+      </label>
+
+      <label>Density
+        <div class="slider-container">
+          <span class="value" id="densityVal">— kg/m³</span>
+        </div>
+      </label>
+
+      <button id="launchAsteroid">Launch Asteroid</button>
+      <button id="spawnTugger" disabled>Spawn Tugger</button>
+      <button id="reset">Reset</button>
+    </div>
+
+    <script type="module">
+      document.getElementById("backButton").addEventListener("click", () => {
+        window.location.href = "index.html";
+      });
+
+      // Update slider values
+      const sliders = [
+        {id:"distance", unit:" km"},
+        {id:"angleTheta", unit:" rad"},
+        {id:"anglePhi", unit:" rad"},
+        {id:"speed", unit:" km/s"},
+        {id:"launchX", unit:" rad"},
+        {id:"launchY", unit:" rad"}
+      ];
+
+      sliders.forEach(s => {
+        const slider = document.getElementById(s.id);
+        const valSpan = document.getElementById(s.id + "Val");
+        slider.addEventListener("input", () => valSpan.textContent = slider.value + s.unit);
+      });
+
+      // Load radius/density from NEO selection (fallback if not set)
+      const selectedNEO = JSON.parse(localStorage.getItem('selectedNEO')) || {};
+      const radiusVal = selectedNEO.radius ?? 0.1;
+      const densityVal = selectedNEO.density ?? 300;
+      document.getElementById('radiusVal').textContent = radiusVal + ' m';
+      document.getElementById('densityVal').textContent = densityVal + ' kg/m³';
+
+      // Set speed slider default if NEO has speed
+      if (selectedNEO.speed !== undefined) {
+        const speedSlider = document.getElementById('speed');
+        speedSlider.value = selectedNEO.speed;
+        document.getElementById('speedVal').textContent = selectedNEO.speed + ' km/s';
+      }
+
+      const launchBtn = document.getElementById("launchAsteroid");
+      const tuggerBtn = document.getElementById("spawnTugger");
+      const resetBtn = document.getElementById("reset");
+
+      launchBtn.addEventListener("click", () => {
+        window.dispatchEvent(new KeyboardEvent("keydown", { code: "ArrowUp" }));
+        tuggerBtn.disabled = false;
+      });
+
+      tuggerBtn.addEventListener("click", () => {
+        window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyM" }));
+        tuggerBtn.disabled = true;
+      });
+
+      resetBtn.addEventListener("click", () => {
+        window.location.reload();
+      });
+    </script>
+  </body>
+</html>

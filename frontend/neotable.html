@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NEO Explorer</title>
+<style>
+  body { font-family: Arial, sans-serif; background-color: #111; color: #eee; margin: 0; padding: 20px; }
+  h1 { text-align: center; }
+  table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: #222; }
+  th, td { padding: 10px; text-align: center; border: 1px solid #555; }
+  th { background-color: #333; }
+  tr:nth-child(even) { background-color: #1a1a1a; }
+  tr:hover { background-color: #444; }
+  button { padding: 5px 10px; cursor: pointer; }
+  #back { margin-bottom: 20px; display: inline-block; }
+</style>
+</head>
+<body>
+<h1>Near-Earth Objects (NEOs)</h1>
+<button id="back" onclick="window.location.href='index.html'">← Back to Main Menu</button>
+
+<table id="neoTable">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Close Approach Date</th>
+      <th>Distance (AU)</th>
+      <th>Speed (km/s)</th>
+      <th>Radius (km)</th>
+      <th>Density (kg/m³)</th>
+      <th>Angle θ (rad)</th>
+      <th>Angle φ (rad)</th>
+      <th>Launch X (rad)</th>
+      <th>Launch Y (rad)</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- TEMP Placeholder Row -->
+    <tr>
+      <td>TEMP</td>
+      <td>N/A</td>
+      <td>0</td>
+      <td>0</td>
+      <td>500</td>
+      <td>1000</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td><button onclick='useNEO({
+          name: "TEMP",
+          date: "N/A",
+          distance: 0,
+          speed: 0,
+          radius: 500,
+          density: 1000,
+          angleTheta: 0,
+          anglePhi: 0,
+          launchX: 0,
+          launchY: 0
+      })'>Use TEMP Object</button></td>
+    </tr>
+  </tbody>
+</table>
+
+<script>
+async function fetchNEOs() {
+  try {
+    // Fetch names from Flask API
+    const namesRes = await fetch('http://127.0.0.1:5000/get_asteroid_names');
+    const names = await namesRes.json();
+
+    const tbody = document.getElementById('neoTable').querySelector('tbody');
+
+    for (const name of names) {
+      // Skip TEMP since we already added it
+      if (name === "TEMP") continue;
+
+      const dataRes = await fetch(`http://127.0.0.1:5000/get_asteroid/${name}?name=${encodeURIComponent(name)}`);
+      const data = await dataRes.json();
+
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${data.name}</td>
+        <td>${data.date}</td>
+        <td>${data.distance}</td>
+        <td>${data.speed}</td>
+        <td>${data.radius ?? 'N/A'}</td>
+        <td>${data.density ?? 'N/A'}</td>
+        <td>${data.angleTheta}</td>
+        <td>${data.anglePhi}</td>
+        <td>${data.launchX}</td>
+        <td>${data.launchY}</td>
+        <td><button onclick='useNEO(${JSON.stringify(data)})'>Use This Object</button></td>
+      `;
+      tbody.appendChild(row);
+    }
+  } catch (err) {
+    console.error('Error fetching NEO data:', err);
+  }
+}
+
+function useNEO(neoData) {
+  localStorage.setItem('selectedNEO', JSON.stringify(neoData));
+  window.location.href = 'neosimulation.html';
+}
+
+// Load table on page load
+fetchNEOs();
+</script>
+</body>
+</html>

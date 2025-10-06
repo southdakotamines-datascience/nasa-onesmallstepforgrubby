@@ -1,14 +1,155 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <title>Asteroid Simulator</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <script type="module" src="javascript/appscript.js"></script>
-  </head>
-  <body>
-    <div id="controls">
-      <select name="asteroids" id="asteroids-select"></select>
-    </div>
-  </body>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asteroid Simulator Menu</title>
+<style>
+  body { margin:0; overflow:hidden; font-family: sans-serif; background:#000; }
+  canvas { display:block; }
+
+  #menu {
+    position:absolute;
+    top:0; left:0;
+    width:100%; height:100%;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-start;
+    align-items:flex-end;
+    padding:20px;
+    pointer-events:none;
+  }
+
+  #menu img {
+    position:absolute;
+    top:20px;
+    left:50%;
+    transform:translateX(-50%);
+    width:500px;
+    pointer-events:auto;
+  }
+
+  .menu-buttons {
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+    margin-top:120px;
+    pointer-events:auto;
+  }
+
+  .menu-buttons button {
+    padding:20px 40px;
+    font-size:22px;
+    background:rgba(0,255,0,0.85);
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    color:#000;
+    transition:all 0.2s ease;
+  }
+
+  .menu-buttons button:hover {
+    background:rgba(0,255,0,1);
+    transform:scale(1.05);
+  }
+</style>
+</head>
+<body>
+
+<div id="menu">
+  <img src="../images/UI_prefabs/earthvsastroidtitle.svg" alt="Asteroid Simulator Title">
+  <div class="menu-buttons">
+    <button id="realNEO">Use Real Near Earth Objects</button>
+    <button id="sandbox">Sandbox Mode</button>
+    <button id="learnMore">Learn More</button>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.module.js';
+
+// --- 3D Scene Setup ---
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 5000);
+camera.position.set(0,0,300);
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// Lights
+const sun = new THREE.DirectionalLight(0xffffff,1);
+sun.position.set(100,50,100);
+scene.add(sun);
+scene.add(new THREE.AmbientLight(0xffffff,0.3));
+
+// Earth
+const loader = new THREE.TextureLoader();
+const earthTexture = loader.load("https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg");
+const bumpTexture = loader.load("https://threejs.org/examples/textures/planets/earth_bump_2048.jpg");
+
+const EARTH_RADIUS = 100;
+const earthMaterial = new THREE.MeshPhongMaterial({ map: earthTexture, bumpMap: bumpTexture, bumpScale: 3 });
+const earth = new THREE.Mesh(new THREE.SphereGeometry(EARTH_RADIUS,128,128), earthMaterial);
+scene.add(earth);
+
+// Clouds
+const cloudTexture = loader.load("https://threejs.org/examples/textures/planets/earth_clouds_1024.png");
+const clouds = new THREE.Mesh(
+  new THREE.SphereGeometry(EARTH_RADIUS*1.0125,64,64),
+  new THREE.MeshPhongMaterial({ map: cloudTexture, transparent:true, opacity:0.6, depthWrite:false, side:THREE.DoubleSide })
+);
+scene.add(clouds);
+
+// Starfield
+function addStarfield(){
+  const starCount = 5000;
+  const positions = new Float32Array(starCount*3);
+  for(let i=0;i<starCount;i++){
+    const r = 1000;
+    const theta = Math.random()*Math.PI*2;
+    const phi = Math.acos(2*Math.random()-1);
+    positions[i*3] = r*Math.sin(phi)*Math.cos(theta);
+    positions[i*3+1] = r*Math.sin(phi)*Math.sin(theta);
+    positions[i*3+2] = r*Math.cos(phi);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(positions,3));
+  const mat = new THREE.PointsMaterial({color:0xffffff, size:2, sizeAttenuation:true});
+  const stars = new THREE.Points(geo, mat);
+  scene.add(stars);
+}
+addStarfield();
+
+// Animate Earth
+function animate(){
+  requestAnimationFrame(animate);
+  earth.rotation.y += 0.001;
+  clouds.rotation.y += 0.0012;
+  renderer.render(scene,camera);
+}
+animate();
+
+// --- Buttons ---
+document.getElementById("realNEO").addEventListener("click", ()=>{
+    window.location.href = "neotable.html"; // <-- opens your NEO table
+});
+
+document.getElementById("sandbox").addEventListener("click", ()=>{
+    window.location.href = "sandbox.html";
+});
+
+document.getElementById("learnMore").addEventListener("click", ()=>{
+    alert("Learn more about asteroids and near-Earth objects!");
+});
+
+// Resize handler
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+
+</body>
 </html>
