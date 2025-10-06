@@ -13,10 +13,10 @@
 #### Pre-requisites:
 These are some of the libaries that are being used by python in the backend.
 Navigate to the 'backend' directory and run 'pip install' with these libraries if needed.
-    flask
-    flask_cors
-    numpy
-    astroquery
+- flask
+- flask_cors
+- numpy
+- astroquery
 
 #### Running Locally
     navigate to the 'backend' directory
