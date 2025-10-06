@@ -1,11 +1,15 @@
 import * as THREE from 'three';
 import { get_asteroid_names, get_asteroid_data } from './data-access.js'
 
+<<<<<<< HEAD
 window.onload = () => {
   get_asteroid_data("2020 FA5")
 }
 
 // --- Constants ---
+=======
+// some constants for the scene
+>>>>>>> 4b2d1293e21dc48ea7e54462e832de47d2c28b41
 const EARTH_RADIUS = 100;
 const REAL_EARTH_RADIUS_KM = 6371;
 const SCALE = REAL_EARTH_RADIUS_KM / EARTH_RADIUS;
@@ -391,3 +395,52 @@ function animate(){
   renderer.render(scene,camera);
 }
 animate();
+<<<<<<< HEAD
+=======
+
+// control panel
+async function loadDropdown() {
+    const list = await get_asteroid_names();
+    const dropdownElement = document.getElementById('asteroids-select');
+
+    list.forEach(element => {
+        let item = document.createElement('option');
+        item.value = element;
+        item.innerText = element;
+        dropdownElement.appendChild(item);
+    });
+}
+window.onload = function() {
+  loadDropdown();
+}
+
+async function updateAsteroidFromSelect(){
+  const dropDown = document.getElementById('asteroids-select');
+  const selected = await get_asteroid_data(dropDown.value);
+
+  const distance = parseFloat(selected["distance"]);
+  const angleTheta = parseFloat(selected["angleTheta"]);
+  const anglePhi = parseFloat(selected["anglePhi"]);
+  const speed = parseFloat(selected["speed"]);
+  const launchX = parseFloat(selected["launchX"]);
+  const launchY = parseFloat(selected["launchY"]);
+  const radius = parseFloat(selected["radius"]);
+  const density = parseFloat(selected["density"]);
+
+  spawnAsteroid(distance,angleTheta,anglePhi,speed,launchX,launchY,radius,density);
+}
+
+document.getElementById('asteroids-select').addEventListener("change", updateAsteroidFromSelect());
+
+updateAsteroidFromSelect();
+
+window.addEventListener("keydown",(e)=>{
+  if(e.code==="ArrowUp") launched=true; // press up to launch
+});
+
+window.addEventListener("resize",()=>{
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+});
+>>>>>>> 4b2d1293e21dc48ea7e54462e832de47d2c28b41
