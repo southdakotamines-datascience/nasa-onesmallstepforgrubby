@@ -77,7 +77,7 @@ async function fetchNEOs() {
       // Skip TEMP since we already added it
       if (name === "TEMP") continue;
 
-      const dataRes = await fetch(`http://127.0.0.1:5000/get_asteroid/${name}?name=${encodeURIComponent(name)}`);
+      const dataRes = await fetch(`http://127.0.0.1:5000/get_asteroid?name=${encodeURIComponent(name)}`);
       const data = await dataRes.json();
 
       const row = document.createElement('tr');
